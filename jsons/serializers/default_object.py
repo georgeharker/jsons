@@ -115,6 +115,8 @@ def _do_serialize(
     make_attributes_public = is_attrs_cls and not strip_privates
     for attr_name, cls_ in attributes.items():
         attr = getattr(obj, attr_name)
+        if not hasattr(obj, attr_name):
+            raise SerializationError('Bad attribute {}'.format(attr_name))
         attr_type = cls_ or type(attr)
         announce_class(attr_type, fork_inst=fork_inst)
         serializer = get_serializer(attr_type, fork_inst)
@@ -131,12 +133,15 @@ def _do_serialize(
             _store_cls_info(dumped_elem, attr, kwargs)
         except Exception as err:
             if strict:
-                raise SerializationError(message=err.args[0]) from err
+                raise SerializationError(message='Failed to dump attribute "{}" of '
+                                         'object of type "{}". Reason: {}'
+                                         .format(attr_name, get_class_name(cls),
+                                                 str(err))) from err
             else:
                 fork_inst._warn('Failed to dump attribute "{}" of object of '
                                 'type "{}". Reason: {}. Ignoring the '
                                 'attribute.'
-                                .format(attr, get_class_name(cls), err.args[0]),
+                                .format(attr_name, get_class_name(cls), err.args[0]),
                                 'attribute-not-serialized')
                 break
 

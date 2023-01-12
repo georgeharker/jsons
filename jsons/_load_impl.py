@@ -104,6 +104,8 @@ def _do_load(json_obj: object,
              cls: type,
              initial: bool,
              **kwargs):
+    fork_inst = kwargs['fork_inst']
+    fork_inst._path.append(cls)
     cls_name = get_class_name(cls, fully_qualified=True)
     if deserializer is None:
         raise DeserializationError('No deserializer for type "{}"'.format(cls_name), json_obj, cls)
@@ -115,11 +117,13 @@ def _do_load(json_obj: object,
         if isinstance(err, JsonsError):
             raise
         message = 'Could not deserialize value "{}" into "{}". {}'.format(json_obj, cls_name, err)
+        fork_inst._path.pop()
         raise DeserializationError(message, json_obj, cls) from err
     else:
         if initial:
             # Clear all lru caches right before returning the initial call.
             clear()
+        fork_inst._path.pop()
         return result
 
 

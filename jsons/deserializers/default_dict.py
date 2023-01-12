@@ -83,7 +83,23 @@ def _deserialize(
             # hashed though, they have been loaded already.
             kwargs_k = {**kwargs, 'cls': cls_k}
             key_func = lambda key: load(key_transformer(key), **kwargs_k)
+
+
+    def catch_load_errs(obj, key, **kwargs):
+        return load(obj[key], **kwargs_)
+        try:
+            return load(obj[key], **kwargs_)
+        except Exception as err:
+            raise DeserializationError('at key {} {}'.format(key, str(err))) from err
+
+    def catch_key_errs(key, key_func):
+        return key_func(key)
+        try:
+            return key_func(key)
+        except Exception as err:
+            raise DeserializationError('at key {} {}'.format(key, str(err))) from err
+
     return {
-        key_func(key): load(obj[key], **kwargs_)
+        catch_key_errs(key, key_func): catch_load_errs(obj, key, **kwargs_)
         for key in obj
     }

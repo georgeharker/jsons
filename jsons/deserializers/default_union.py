@@ -17,14 +17,19 @@ def default_union_deserializer(obj: object, cls: Union, **kwargs) -> object:
     :return: An object of the first type of the Union that could be
     deserialized successfully.
     """
+    errs = []
     for sub_type in get_union_params(cls):
         try:
             return load(obj, sub_type, **kwargs)
-        except JsonsError:
+        except JsonsError as err:
+            errs.append((sub_type, err))
             pass  # Try the next one.
     else:
         args_msg = ', '.join([get_class_name(cls_)
                               for cls_ in get_union_params(cls)])
         err_msg = ('Could not match the object of type "{}" to any type of '
-                   'the Union: {}'.format(type(obj).__name__, args_msg))
+                   'the Union: {} ({})'
+                   .format(type(obj), args_msg,
+                           '| '.join('{}: {}'.format(
+                               get_class_name(t), str(e)) for t, e in errs)))
         raise DeserializationError(err_msg, obj, cls)

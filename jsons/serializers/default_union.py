@@ -24,14 +24,19 @@ def default_union_serializer(obj: object, cls: Union, **kwargs) -> object:
     if obj is None and NoneType in sub_types:
         return obj
 
+    errs = []
     for sub_type in sub_types:
         try:
             return dump(obj, sub_type, **kwargs)
-        except JsonsError:
+        except JsonsError as err:
+            errs.append((sub_type, err))
             pass  # Try the next one.
     else:
         args_msg = ', '.join([get_class_name(cls_)
                               for cls_ in get_union_params(cls)])
         err_msg = ('Could not match the object of type "{}" to any type of '
-                   'the Union: {}'.format(type(obj), args_msg))
+                   'the Union: {} ({})'
+                   .format(type(obj), args_msg,
+                           '| '.join('{}: {}'.format(
+                               get_class_name(t), str(e)) for t, e in errs)))
         raise SerializationError(err_msg)

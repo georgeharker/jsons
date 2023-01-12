@@ -7,10 +7,10 @@ import json
 from typing import Optional, Dict
 
 from jsons._cache import clear
-from jsons._common_impl import StateHolder
+from jsons._common_impl import StateHolder, get_class_name
 from jsons._extra_impl import announce_class
 from jsons._lizers_impl import get_serializer
-from jsons.exceptions import SerializationError
+from jsons.exceptions import JsonsError, SerializationError
 
 
 def dump(obj: object,
@@ -56,14 +56,20 @@ def dump(obj: object,
 
 
 def _do_dump(obj, serializer, cls, initial, kwargs):
+    fork_inst = kwargs['fork_inst']
+    fork_inst._path.append(cls)
     try:
         result = serializer(obj, cls=cls, **kwargs)
+        fork_inst._path.pop()
         if initial:
             clear()
         return result
+    # FIXME: root exception is dangerous
     except Exception as err:
+        path = '->'.join(get_class_name(p) for p in fork_inst._path)
+        fork_inst._path.pop()
         clear()
-        raise SerializationError(str(err)) from err
+        raise SerializationError('{} [ {} ]'.format(str(err), path)) from err
 
 
 def dumps(obj: object,

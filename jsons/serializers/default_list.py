@@ -3,6 +3,7 @@ from typing import Optional
 from typish import get_args
 
 from jsons import get_serializer
+from jsons.exceptions import SerializationError
 from jsons._common_impl import StateHolder
 from jsons._dump_impl import dump
 
@@ -45,4 +46,12 @@ def default_list_serializer(
         inner_type = type(obj[0])
         serializer = get_serializer(inner_type, fork_inst)
 
-    return [serializer(elem, cls=inner_type, fork_inst=fork_inst, **kwargs_) for elem in obj]
+    def catch_errs(serializer, elem, i, cls, fork_inst, **kwargs):
+        try:
+            return serializer(elem, cls=inner_type, fork_inst=fork_inst, **kwargs_)
+        except Exception as err:
+            raise SerializationError('at element {} {}'.format(i, str(err))) from err
+
+    # return [serializer(elem, cls=inner_type, fork_inst=fork_inst, **kwargs_) for i, elem in enumerate(obj)]
+    return [catch_errs(serializer, elem, i, cls=inner_type, fork_inst=fork_inst, **kwargs_)
+            for i, elem in enumerate(obj)]

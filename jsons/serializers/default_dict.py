@@ -2,7 +2,7 @@ from typing import Callable, Dict, Optional, Tuple
 
 from jsons._common_impl import JSON_KEYS
 from jsons._dump_impl import dump
-
+from jsons.exceptions import SerializationError
 
 def default_dict_serializer(
         obj: dict,
@@ -34,28 +34,31 @@ def default_dict_serializer(
     result = dict()
     types = types or dict()
     for key in obj:
-        obj_ = obj[key]
-        cls_ = types.get(key, None)
+        try:
+            obj_ = obj[key]
+            cls_ = types.get(key, None)
+            # If key is not a valid json type, use the hash as key and store the
+            # original key in a separate section.
+            dict_and_key = _store_and_hash(result, key,
+                                           key_transformer=key_transformer,
+                                           strip_nulls=strip_nulls, strict=strict,
+                                           types=types, **kwargs)
+            if dict_and_key:
+                result, key = dict_and_key
 
-        # If key is not a valid json type, use the hash as key and store the
-        # original key in a separate section.
-        dict_and_key = _store_and_hash(result, key,
-                                       key_transformer=key_transformer,
-                                       strip_nulls=strip_nulls, strict=strict,
-                                       types=types, **kwargs)
-        if dict_and_key:
-            result, key = dict_and_key
+            dumped_elem = dump(obj_,
+                               cls=cls_,
+                               key_transformer=key_transformer,
+                               strip_nulls=strip_nulls,
+                               strict=strict,
+                               **kwargs)
+            if not (strip_nulls and dumped_elem is None):
+                if key_transformer:
+                    key = key_transformer(key)
+                result[key] = dumped_elem
+        except Exception as err:
+            raise SerializationError('error at key {} {}'.format(key, str(err))) from err
 
-        dumped_elem = dump(obj_,
-                           cls=cls_,
-                           key_transformer=key_transformer,
-                           strip_nulls=strip_nulls,
-                           strict=strict,
-                           **kwargs)
-        if not (strip_nulls and dumped_elem is None):
-            if key_transformer:
-                key = key_transformer(key)
-            result[key] = dumped_elem
     return result
 
 

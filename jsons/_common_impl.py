@@ -6,6 +6,7 @@ throughout `jsons`.
 """
 import builtins
 import warnings
+from collections import deque
 from importlib import import_module
 from typing import Callable, Optional, Tuple, TypeVar, Any
 
@@ -34,6 +35,7 @@ class StateHolder:
     _announced_classes = dict()
     _suppress_warnings = False
     _suppressed_warnings = set()
+    _path = deque()
 
     @classmethod
     def _warn(cls, msg, code, *args, **kwargs):
