@@ -291,6 +291,7 @@ set_serializer(default_uuid_serializer, UUID)
 set_serializer(default_decimal_serializer, Decimal)
 set_serializer(default_union_serializer, (Union, Optional))
 set_serializer(default_path_serializer, PurePath)
+set_serializer(default_enum_serializer, IntEnum)  # must be after primitive_serializer
 
 set_deserializer(default_list_deserializer, (list, List))
 set_deserializer(default_tuple_deserializer, (tuple, Tuple))
@@ -312,6 +313,7 @@ set_deserializer(default_uuid_deserializer, UUID)
 set_deserializer(default_complex_deserializer, complex)
 set_deserializer(default_decimal_deserializer, Decimal)
 set_deserializer(default_path_deserializer, PurePath)
+set_deserializer(default_enum_deserializer, IntEnum)  # must be after primitive_deserializer
 
 if default_zone_info_serializer and default_zone_info_deserializer:
     from zoneinfo import ZoneInfo

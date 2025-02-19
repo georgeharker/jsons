@@ -5,6 +5,8 @@ from typish import get_args
 from jsons._load_impl import load
 from jsons.exceptions import DeserializationError
 
+from typish import get_args
+
 
 def default_dict_deserializer(
         obj: dict,
